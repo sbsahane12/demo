@@ -12,7 +12,7 @@ public class AlphabetDisplay {
         }
     }
 }
-
+```
 2.Java program to accept the details of Employee (Eno, EName, Designation, Salary) from a user and store it into the database (using Swing):
 ```java
 import javax.swing.*;
@@ -89,3 +89,4 @@ public class EmployeeDetailsForm extends JFrame implements ActionListener {
         new EmployeeDetailsForm();
     }
 }
+```
