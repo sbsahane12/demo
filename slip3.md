@@ -69,8 +69,8 @@ Slip 3: JSP Program and Java LinkedList Operations
         <%
             try {
                 // Establishing database connection
-                Class.forName("com.mysql.jdbc.Driver");
-                Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/your_database", "username", "password");
+                Class.forName("org.postgresql.Driver");
+                Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/your_database", "username", "password");
                 Statement stmt = con.createStatement();
                 ResultSet rs = stmt.executeQuery("SELECT * FROM patients");
                 
@@ -100,9 +100,8 @@ Slip 3: JSP Program and Java LinkedList Operations
 ```
 2)Java program to create LinkedList of String objects and perform the following operations:
 
-```
+```java
 import java.util.LinkedList;
-
 public class LinkedListOperations {
     public static void main(String[] args) {
         // Creating a LinkedList of String objects
