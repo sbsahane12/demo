@@ -1,94 +1,111 @@
-Slip 1: Java Program to display alphabets and store employee details
+#include <stdio.h>
+#define TRUE 1
+#define FALSE 0
 
-1. Java program to display all the alphabets between 'A' to 'Z' after every 2 seconds:
+int m, n, max[10][10], alloc[10][10], avail[10], need[10][10], finish[10], i, j;
 
-```java
-public class AlphabetDisplay {
-    public static void main(String[] args) throws InterruptedException {
-        char alphabet;
-        for (alphabet = 'A'; alphabet <= 'Z'; alphabet++) {
-            System.out.print(alphabet + " ");
-            Thread.sleep(2000); // Sleep for 2 seconds
+void computeNeed() {
+    for (i = 0; i < m; i++)
+        for (j = 0; j < n; j++)
+            need[i][j] = max[i][j] - alloc[i][j];
+}
+
+int isFeasible(int pno) {
+    int cnt = 0;
+    for (j = 0; j < n; j++)
+        if (need[pno][j] <= avail[j])
+            cnt++;
+    return (cnt == n);
+}
+
+void checkSystem() {
+    int ans[m], cnt = 0, flag;
+    while (TRUE) {
+        flag = FALSE;
+        for (i = 0; i < m; i++)
+            if (!finish[i]) {
+                if (isFeasible(i)) {
+                    flag = TRUE;
+                    finish[i] = TRUE;
+                    ans[cnt++] = i;
+                    for (j = 0; j < n; j++)
+                        avail[j] += alloc[i][j];
+                }
+            }
+        if (!flag)
+            break;
+    }
+    flag = TRUE;
+    for (i = 0; i < m; i++)
+        if (!finish[i])
+            flag = FALSE;
+    if (flag) {
+        printf("\n System is in safe state\n");
+        printf("\n Safe sequence is as follows\n");
+        for (i = 0; i < cnt; i++)
+            printf("p%d\t", ans[i]);
+    } else
+        printf("\n System is not in safe state\n");
+}
+
+void acceptData(int x[10][10]) {
+    for (i = 0; i < m; i++) {
+        for (j = 0; j < n; j++) {
+            scanf("%d", &x[i][j]);
         }
     }
 }
-```
 
-2)Java program to accept the details of Employee (Eno, EName, Designation, Salary) from a user and store it into the database (using Swing):
-```
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-
-public class EmployeeDetailsForm extends JFrame implements ActionListener {
-    private JTextField txtEno, txtEName, txtDesignation, txtSalary;
-
-    public EmployeeDetailsForm() {
-        setTitle("Employee Details Form");
-        setSize(400, 300);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-
-        JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(5, 2));
-
-        JLabel lblEno = new JLabel("Employee Number:");
-        txtEno = new JTextField();
-        JLabel lblEName = new JLabel("Employee Name:");
-        txtEName = new JTextField();
-        JLabel lblDesignation = new JLabel("Designation:");
-        txtDesignation = new JTextField();
-        JLabel lblSalary = new JLabel("Salary:");
-        txtSalary = new JTextField();
-
-        JButton btnSave = new JButton("Save");
-        btnSave.addActionListener(this);
-
-        panel.add(lblEno);
-        panel.add(txtEno);
-        panel.add(lblEName);
-        panel.add(txtEName);
-        panel.add(lblDesignation);
-        panel.add(txtDesignation);
-        panel.add(lblSalary);
-        panel.add(txtSalary);
-        panel.add(new JLabel()); // Empty label for layout
-        panel.add(btnSave);
-
-        add(panel);
-        setVisible(true);
+void displayData() {
+    printf("\n\tAllocation\tMax\tNeed\n");
+    for (i = 0; i < m; i++) {
+        printf("\n p%d\t", i);
+        for (j = 0; j < n; j++)
+            printf("%4d", alloc[i][j]);
+        printf("\t");
+        for (j = 0; j < n; j++)
+            printf("%4d", max[i][j]);
+        printf("\t");
+        for (j = 0; j < n; j++)
+            printf("%4d", need[i][j]);
     }
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        String eno = txtEno.getText();
-        String eName = txtEName.getText();
-        String designation = txtDesignation.getText();
-        String salary = txtSalary.getText();
-
-        try {
-            Class.forName("org.postgresql.Driver");
-            Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/your_database", "username", "password");
-            String sql = "INSERT INTO employee (Eno, EName, Designation, Salary) VALUES (?, ?, ?, ?)";
-            PreparedStatement statement = connection.prepareStatement(sql);
-            statement.setString(1, eno);
-            statement.setString(2, eName);
-            statement.setString(3, designation);
-            statement.setString(4, salary);
-            statement.executeUpdate();
-            JOptionPane.showMessageDialog(this, "Employee details saved successfully!");
-            connection.close();
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    public static void main(String[] args) {
-        new EmployeeDetailsForm();
-    }
+    printf("\n Available\n");
+    for (j = 0; j < n; j++)
+        printf("%4d", avail[j]);
 }
-```
+
+int main() {
+    printf("\n Enter the number of processes and resources");
+    scanf("%d %d", &m, &n);
+    printf("\n Enter the allocation\n");
+    acceptData(alloc);
+    printf("\n Enter the max limit\n");
+    acceptData(max);
+    printf("\n Enter the availability\n");
+    for (i = 0; i < n; i++)
+        scanf("%d", &avail[i]);
+    computeNeed();
+    displayData();
+    checkSystem();
+    return 0;
+}
+FCFS Algorithm:
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+int main() {
+    int n, req[50], mov = 0, cp;
+    printf("Enter the current position\n");
+    scanf("%d", &cp);
+    printf("Enter the number of requests\n");
+    scanf("%d", &n);
+    printf("Enter the request order\n");
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &req[i]);
+        mov += abs(cp - req[i]);
+        cp = req[i];
+    }
+    printf("Total head movement = %d\n", mov);
+    return 0;
+}
