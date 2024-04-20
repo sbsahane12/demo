@@ -1,93 +1,108 @@
-Slip 27: Java Program to Display College Details on JTable and Servlet Program to Change Session Inactive Time Interval
+#include<stdio.h>
 
-1. Java Program to display the details of College (CID, CName, address, Year) on JTable:
-
-This Java program displays the details of College (CID, CName, address, Year) on a JTable. It fetches the data from the database and populates the JTable with the retrieved data.
-
-```java
-import javax.swing.*;
-import java.sql.*;
-
-public class CollegeDetails extends JFrame {
-    private JTable table;
-
-    public CollegeDetails() {
-        setTitle("College Details");
-        setSize(500, 300);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-
-        try {
-            String url = "jdbc:mysql://localhost:3306/your_database";
-            String username = "username";
-            String password = "password";
-
-            Connection con = DriverManager.getConnection(url, username, password);
-            Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT * FROM College");
-
-            // Fetch number of rows
-            rs.last();
-            int rowCount = rs.getRow();
-            rs.beforeFirst();
-
-            // Create 2D array to hold table data
-            Object[][] data = new Object[rowCount][4];
-
-            // Populate data from ResultSet to 2D array
-            int row = 0;
-            while (rs.next()) {
-                data[row][0] = rs.getInt("CID");
-                data[row][1] = rs.getString("CName");
-                data[row][2] = rs.getString("Address");
-                data[row][3] = rs.getInt("Year");
-                row++;
-            }
-
-            // Column names
-            String[] columnNames = {"CID", "CName", "Address", "Year"};
-
-            // Create JTable with data and column names
-            table = new JTable(data, columnNames);
-            JScrollPane scrollPane = new JScrollPane(table);
-            getContentPane().add(scrollPane);
-
-            con.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        setVisible(true);
-    }
-
-    public static void main(String[] args) {
-        new CollegeDetails();
-    }
+int main() {
+int queue[20], n, head, i, j, k, seek = 0, max, diff, temp, queue1[20], queue2[20], temp1 = 0, temp2 = 0;
+printf("Enter the max range of disk: ");
+scanf("%d", &max);
+printf("Enter the initial head position: ");
+scanf("%d", &head);
+printf("Enter the number of queue elements: ");
+scanf("%d", &n);
+printf("Enter the queue elements: ");
+for(i = 0; i < n; i++) {
+scanf("%d", &temp);
+// Process the queue elements into two separate queues
+if(temp >= head) {
+queue1[temp1] = temp;
+temp1++;
+} else {
+queue2[temp2] = temp;
+temp2++;
+}
+}
+// Sort queue1 - increasing order
+for(i = 0; i < temp1 - 1; i++) {
+for(j = i + 1; j < temp1; j++) {
+if(queue1[i] > queue1[j]) {
+    temp = queue1[i];
+    queue1[i] = queue1[j];
+    queue1[j] = temp;
+}
+}
+}
+// Sort queue2 - decreasing order
+for(i = 0; i < temp2 - 1; i++) {
+for(j = i + 1; j < temp2; j++) {
+if(queue2[i] < queue2[j]) {
+    temp = queue2[i];
+    queue2[i] = queue2[j];
+    queue2[j] = temp;
+}
+}
+}
+// Join the two queues
+for(i = 0, j = 0; j < temp1; i++, j++) {
+queue[i] = queue1[j];
+}
+queue[i] = max;
+for(i = temp1 + 1, j = 0; j < temp2; i++, j++) {
+queue[i] = queue2[j];
+}
+queue[i] = 0;
+// Calculate the head movements
+for(j = 0; j <= n + 1; j++) {
+diff = abs(queue[j + 1] - queue[j]);
+seek += diff;
+printf("Disk head moves from %d to %d with seek %d\n", queue[j], queue[j + 1], diff);
+}
+printf("Total seek time is %d\n", seek);
+return 0;
 }
 
-```
-Q2
-```
-import java.io.*;
-import javax.servlet.*;
-import javax.servlet.http.*;
 
-public class SessionTimeoutServlet extends HttpServlet {
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // Get the current session
-        HttpSession session = request.getSession();
+#include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
-        // Set the inactive time interval to 60 seconds (1 minute)
-        session.setMaxInactiveInterval(60);
+#define ARRAY_SIZE 1000
 
-        // Print message
-        response.setContentType("text/html");
-        PrintWriter out = response.getWriter();
-        out.println("<html><body>");
-        out.println("<h3>Session inactive time interval changed to 1 minute.</h3>");
-        out.println("</body></html>");
-        out.close();
-    }
+int main(int argc, char* argv[]) {
+int rank, size, i;
+int array[ARRAY_SIZE];
+int local_min = INT_MAX; // Initialize local_min
+int global_min;
+
+// Initialize the MPI environment
+MPI_Init(&argc, &argv);
+// Get the number of processes
+MPI_Comm_size(MPI_COMM_WORLD, &size);
+// Get the rank of the process
+MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+// Seed the random number generator to get different results each time
+srand(rank + time(NULL));
+
+// Generate random numbers in each process
+for(i = 0; i < ARRAY_SIZE; i++) {
+array[i] = rand() % 100;
+if(i == 0 || array[i] < local_min) {
+local_min = array[i];
+}
 }
 
-```
+// Print the local min of each process
+printf("Local min for process %d is %d\n", rank, local_min);
+
+// Reduce all of the local minima into the global min
+MPI_Reduce(&local_min, &global_min, 1, MPI_INT, MPI_MIN, 0, MPI_COMM_WORLD);
+
+// Print the global min once at the root
+if (rank == 0) {
+printf("Global min = %d\n", global_min);
+}
+
+// Finalize the MPI environment
+MPI_Finalize();
+return 0;
+}
