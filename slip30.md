@@ -1,84 +1,64 @@
-Slip 30: Java Program for Synchronization and Scrollable ResultSet Implementation
+#include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
-1. Java program for the implementation of synchronization:
+#define ARRAY_SIZE 1000
 
-This Java program demonstrates synchronization using the synchronized keyword to ensure thread safety when multiple threads are accessing a shared resource.
+int main(int argc, char* argv[]) {
+int rank, size, i;
+int array[ARRAY_SIZE];
+int local_min = 100, global_min = 100;
 
-```java
-public class SynchronizationDemo {
-    private int counter = 0;
-
-    // Synchronized method to increment counter
-    public synchronized void increment() {
-        counter++;
-    }
-
-    public static void main(String[] args) throws InterruptedException {
-        SynchronizationDemo demo = new SynchronizationDemo();
-
-        // Create multiple threads to increment counter
-        Thread t1 = new Thread(() -> {
-            for (int i = 0; i < 1000; i++) {
-                demo.increment();
-            }
-        });
-
-        Thread t2 = new Thread(() -> {
-            for (int i = 0; i < 1000; i++) {
-                demo.increment();
-            }
-        });
-
-        // Start the threads
-        t1.start();
-        t2.start();
-
-        // Join the threads to ensure they finish execution before printing the counter value
-        t1.join();
-        t2.join();
-
-        // Print the counter value
-        System.out.println("Counter value: " + demo.counter);
-    }
+// Initialize the MPI environment
+MPI_Init(&argc, &argv);
+// Get the number of processes
+MPI_Comm_size(MPI_COMM_WORLD, &size);
+// Get the rank of the process
+MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+// Seed the random number generator to get different results each time
+srand(rank + time(NULL));
+// Generate random numbers in each process
+for(i = 0; i < ARRAY_SIZE; i++) {
+array[i] = rand() % 100;
+if(array[i] < local_min) {
+local_min = array[i];
 }
-```
-Q2:
-```
-import java.sql.*;
-
-public class ScrollableResultSetDemo {
-    public static void main(String[] args) {
-        String url = "jdbc:mysql://localhost:3306/your_database";
-        String username = "username";
-        String password = "password";
-
-        try {
-            Connection con = DriverManager.getConnection(url, username, password);
-            Statement stmt = con.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
-            ResultSet rs = stmt.executeQuery("SELECT * FROM Teacher");
-
-            // Move cursor to the last row
-            rs.last();
-
-            // Print details of the last row
-            System.out.println("Last Teacher Details:");
-            System.out.println("TID: " + rs.getInt("TID"));
-            System.out.println("TName: " + rs.getString("TName"));
-            System.out.println("Salary: " + rs.getDouble("Salary"));
-
-            // Move cursor to the first row
-            rs.first();
-
-            // Print details of the first row
-            System.out.println("\nFirst Teacher Details:");
-            System.out.println("TID: " + rs.getInt("TID"));
-            System.out.println("TName: " + rs.getString("TName"));
-            System.out.println("Salary: " + rs.getDouble("Salary"));
-
-            con.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
 }
-```
+// Print the local min of each process
+printf("Local min for process %d is %d\n", rank, local_min);
+// Reduce all of the local minima into the global min
+MPI_Reduce(&local_min, &global_min, 1, MPI_INT, MPI_MIN, 0, MPI_COMM_WORLD);
+// Print the global min once at the root
+if (rank == 0) {
+printf("Global min = %d\n", global_min);
+}
+// Finalize the MPI environment
+MPI_Finalize();
+return 0;
+}
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<time.h>
+
+void main() {
+int n, req[50], mov = 0, cp;
+printf("enter the current position: ");
+scanf("%d", &cp);
+printf("enter the number of requests: ");
+scanf("%d", &n);
+printf("enter the request order: ");
+for(int i = 0; i < n; i++) {
+scanf("%d", &req[i]);
+}
+mov = mov + abs(cp - req[0]);
+printf("%d -> %d", cp, req[0]);
+for(int i = 1; i < n; i++) {
+mov = mov + abs(req[i] - req[i - 1]);
+printf(" -> %d", req[i]);
+}
+printf("\n");
+printf("total head movement = %d\n", mov);
+}
