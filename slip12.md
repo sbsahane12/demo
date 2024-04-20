@@ -1,136 +1,115 @@
-Slip 12: JSP Program to Check Perfect Number and Java Program to Work with Database Table
+#include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
-1. JSP program to check whether a given number is Perfect or not using Include directive:
+#define ARRAY_SIZE 1000
 
-This JSP program checks whether a given number is a Perfect number or not. It includes another JSP file that contains the logic to determine if a number is Perfect or not.
+int main(int argc, char* argv[]) {
+int rank, size, i;
+int array[ARRAY_SIZE];
+int local_sum = 0, total_sum = 0;
+float average;
 
-Create a main JSP file (checkPerfect.jsp) that includes the logic to check for a Perfect number and displays the result.
+// Initialize the MPI environment
+MPI_Init(&argc, &argv);
+// Get the number of processes
+MPI_Comm_size(MPI_COMM_WORLD, &size);
+// Get the rank of the process
+MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-```jsp
+// Seed the random number generator to get different results for each process
+srand(rank + time(NULL));
 
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Perfect Number Checker</title>
-</head>
-<body>
-    <h2>Perfect Number Checker</h2>
-    <%
-        int number = Integer.parseInt(request.getParameter("number"));
-        request.setAttribute("number", number);
-        request.getRequestDispatcher("perfectCheck.jsp").include(request, response);
-    %>
-</body>
-</html>
+// Generate random numbers in each process
+for(i = 0; i < ARRAY_SIZE; i++) {
+array[i] = rand() % 100;
+local_sum += array[i];
+}
 
-```
-perfectCheck.jsp
-```
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
-<%@ page import="java.util.*" %>
-<%@ page import="java.io.*" %>
-<%@ page import="java.lang.*" %>
-<%
-    int number = (Integer)request.getAttribute("number");
-    int sum = 0;
-    for (int i = 1; i < number; i++) {
-        if (number % i == 0) {
-            sum += i;
-        }
-    }
-    if (sum == number) {
-        out.println(number + " is a Perfect number.");
+// Reduce all of the local sums into the total sum
+MPI_Reduce(&local_sum, &total_sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+
+// Calculate the average
+average = (float) total_sum / (ARRAY_SIZE * size);
+
+// Print the local sum of each process
+printf("Local sum for process %d is %d\n", rank, local_sum);
+
+// Print the total sum and average once at the root
+if (rank == 0) {
+printf("Total sum = %d\n", total_sum);
+printf("Average = %.2f\n", average);
+}
+
+// Finalize the MPI environment
+MPI_Finalize();
+return 0;
+}
+
+
+#include<stdio.h>
+#include<stdlib.h>
+
+void main() {
+int queue[20], n, head, i, j, k, seek = 0, max, diff, temp, queue1[20], queue2[20], temp1 = 0, temp2 = 0;
+
+printf("Enter the max range of disk: ");
+scanf("%d", &max);
+printf("Enter the initial head position: ");
+scanf("%d", &head);
+printf("Enter the number of queue elements: ");
+scanf("%d", &n);
+printf("Enter the queue elements: ");
+for(i=1; i<=n; i++) {
+    scanf("%d", &temp);
+    // Process the queue elements into two separate queues
+    if(temp >= head) {
+        queue1[temp1] = temp;
+        temp1++;
     } else {
-        out.println(number + " is not a Perfect number.");
-    }
-%>
-````
-
-
-2 Questionm Answer
-```
-import java.sql.*;
-import javax.swing.*;
-import java.awt.*;
-
-public class ProjectTableDisplay extends JFrame {
-    private JScrollPane scrollPane;
-    private JTable table;
-
-    public ProjectTableDisplay() {
-        setTitle("Project Table Details");
-        setSize(600, 400);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        // Creating database connection parameters
-        String url = "jdbc:mysql://localhost:3306/your_database";
-        String username = "username";
-        String password = "password";
-
-        try {
-            // Establishing database connection
-            Class.forName("com.mysql.jdbc.Driver");
-            Connection con = DriverManager.getConnection(url, username, password);
-            Statement stmt = con.createStatement();
-
-            // Creating PROJECT table
-            String createTableQuery = "CREATE TABLE IF NOT EXISTS PROJECT (project_id INT PRIMARY KEY, Project_name VARCHAR(255), Project_description VARCHAR(255), Project_Status VARCHAR(50))";
-            stmt.executeUpdate(createTableQuery);
-            System.out.println("PROJECT table created successfully.");
-
-            // Inserting values into PROJECT table
-            String[] projectIds = {"1", "2", "3"};
-            String[] projectNames = {"Project A", "Project B", "Project C"};
-            String[] projectDescriptions = {"Description A", "Description B", "Description C"};
-            String[] projectStatuses = {"Active", "Inactive", "Completed"};
-            for (int i = 0; i < projectIds.length; i++) {
-                String insertQuery = "INSERT INTO PROJECT (project_id, Project_name, Project_description, Project_Status) VALUES ('" + projectIds[i] + "', '" + projectNames[i] + "', '" + projectDescriptions[i] + "', '" + projectStatuses[i] + "')";
-                stmt.executeUpdate(insertQuery);
-            }
-            System.out.println("Records inserted into PROJECT table successfully.");
-
-            // Retrieving all records from PROJECT table
-            ResultSet rs = stmt.executeQuery("SELECT * FROM PROJECT");
-
-            // Creating JTable to display records
-            ResultSetMetaData rsmd = rs.getMetaData();
-            int columnCount = rsmd.getColumnCount();
-            String[] columnNames = new String[columnCount];
-            for (int i = 0; i < columnCount; i++) {
-                columnNames[i] = rsmd.getColumnName(i + 1);
-            }
-
-            String[][] data = new String[3][columnCount]; // Assuming 3 records for now
-            int rowIndex = 0;
-            while (rs.next()) {
-                for (int i = 0; i < columnCount; i++) {
-                    data[rowIndex][i] = rs.getString(i + 1);
-                }
-                rowIndex++;
-            }
-
-            table = new JTable(data, columnNames);
-            scrollPane = new JScrollPane(table);
-            add(scrollPane, BorderLayout.CENTER);
-
-            // Closing resources
-            rs.close();
-            stmt.close();
-            con.close();
-        } catch (Exception e) {
-            System.out.println(e);
-        }
-
-        setVisible(true);
-    }
-
-    public static void main(String[] args) {
-        new ProjectTableDisplay();
+        queue2[temp2] = temp;
+        temp2++;
     }
 }
-```
+
+// Sort queue1 - increasing order
+for(i=0; i<temp1-1; i++) {
+    for(j=i+1; j<temp1; j++) {
+        if(queue1[i] > queue1[j]) {
+            temp = queue1[i];
+            queue1[i] = queue1[j];
+            queue1[j] = temp;
+        }
+    }
+}
+
+// Sort queue2 - increasing order
+for(i=0; i<temp2-1; i++) {
+    for(j=i+1; j<temp2; j++) {
+        if(queue2[i] > queue2[j]) {
+            temp = queue2[i];
+            queue2[i] = queue2[j];
+            queue2[j] = temp;
+        }
+    }
+}
+
+// Join the two queues
+for(i=1, j=0; j<temp1; i++, j++) {
+    queue[i] = queue1[j];
+}
+for(i=temp1+1, j=0; j<temp2; i++, j++) {
+    queue[i] = queue2[j];
+}
+
+// Calculate the head movements
+for(j=0; j<n+1; j++) {
+    diff = abs(queue[j+1] - queue[j]);
+    seek += diff;
+    printf("Disk head moves from %d to %d with seek %d\n", queue[j], queue[j+1], diff);
+}
+
+printf("Total seek time is %d\n", seek);
+}
 
