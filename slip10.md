@@ -1,7 +1,7 @@
 #include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h> // Include <time.h> for time() function
+#include <time.h>
 
 #define ARRAY_SIZE 1000
 
