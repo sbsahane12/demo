@@ -1,76 +1,119 @@
-Slip 20: JSP Page to Display Number in Words and Java Program to Blink Image on JFrame Continuously
+#include <stdio.h>
 
-1. JSP page to accept a number from a user and display it in words, with the output in red color:
+int main() {
+int queue[20], n, head, i, j, k, seek = 0, max, diff, temp, queue1[20], queue2[20],
+temp1 = 0, temp2 = 0;
+float avg;
 
-This JSP page accepts a number from a user and displays it in words. For example, if the user enters "123", it will be displayed as "One Two Three". The output is displayed in red color.
+printf("Enter the max range of disk\n");
+scanf("%d", &max);
+printf("Enter the initial head position\n");
+scanf("%d", &head);
+printf("Enter the size of queue request\n");
+scanf("%d", &n);
+printf("Enter the queue of disk positions to be read\n");
 
-```jsp
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Number in Words</title>
-</head>
-<body>
-    <h2 style="color:red;">Enter a Number:</h2>
-    <form action="NumberInWords.jsp" method="post">
-        <input type="text" name="number" required>
-        <input type="submit" value="Submit">
-    </form>
-    
-    <%
-        String numberStr = request.getParameter("number");
-        if (numberStr != null && !numberStr.isEmpty()) {
-            String[] words = {"Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"};
-            out.println("<h2 style='color:red;'>Number in Words:</h2>");
-            for (char digit : numberStr.toCharArray()) {
-                int index = Character.getNumericValue(digit);
-                out.print(words[index] + " ");
-            }
-        }
-    %>
-</body>
-</html>
-```
-Q2:
-```import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-
-public class BlinkingImage extends JFrame implements ActionListener {
-    private Timer timer;
-    private JLabel imageLabel;
-    private ImageIcon imageIcon;
-    private boolean isBlinking = false;
-
-    public BlinkingImage() {
-        setTitle("Blinking Image");
-        setSize(300, 300);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        imageIcon = new ImageIcon("image.png");
-        imageLabel = new JLabel(imageIcon);
-        add(imageLabel);
-
-        timer = new Timer(500, this);
-        timer.start();
-
-        setVisible(true);
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        if (isBlinking) {
-            imageLabel.setVisible(false);
-        } else {
-            imageLabel.setVisible(true);
-        }
-        isBlinking = !isBlinking;
-    }
-
-    public static void main(String[] args) {
-        new BlinkingImage();
-    }
+for (i = 1; i <= n; i++) {
+scanf("%d", &temp);
+if (temp >= head) {
+queue1[temp1] = temp;
+temp1++;
+} else {
+queue2[temp2] = temp;
+temp2++;
 }
-```
+}
+
+// Sort queue1 - increasing order
+for (i = 0; i < temp1 - 1; i++) {
+for (j = i + 1; j < temp1; j++) {
+if (queue1[i] > queue1[j]) {
+temp = queue1[i];
+queue1[i] = queue1[j];
+queue1[j] = temp;
+}
+}
+}
+
+// Sort queue2 - decreasing order
+for (i = 0; i < temp2 - 1; i++) {
+for (j = i + 1; j < temp2; j++) {
+if (queue2[i] < queue2[j]) {
+temp = queue2[i];
+queue2[i] = queue2[j];
+queue2[j] = temp;
+}
+}
+}
+
+// Join the two queues
+for (i = 1, j = 0; j < temp1; i++, j++) {
+queue[i] = queue1[j];
+}
+queue[i] = max;
+for (i = temp1 + 1, j = 0; j < temp2; i++, j++) {
+queue[i] = queue2[j];
+}
+queue[i] = 0;
+queue[0] = head;
+
+// Calculate the head movements
+for (j = 0; j < n + 1; j++) {
+diff = abs(queue[j + 1] - queue[j]);
+seek += diff;
+printf("Disk head moves from %d to %d with %d\n", queue[j], queue[j + 1], diff);
+}
+
+printf("Total seek time is %d\n", seek);
+avg = (float)seek / n;
+printf("Average seek time is %f\n", avg);
+
+return 0;
+}
+
+#include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+#define ARRAY_SIZE 1000
+
+int main(int argc, char* argv[]) {
+int rank, size, i;
+int array[ARRAY_SIZE];
+int local_max, global_max;
+
+// Initialize the MPI environment
+MPI_Init(&argc, &argv);
+// Get the number of processes
+MPI_Comm_size(MPI_COMM_WORLD, &size);
+// Get the rank of the process
+MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+// Seed the random number generator to get different results each time
+srand(rank + time(NULL));
+
+// Generate random numbers in each process
+for (i = 0; i < ARRAY_SIZE; i++) {
+array[i] = rand() % 100;
+if (i == 0 || array[i] > local_max) {
+local_max = array[i];
+}
+}
+
+// Print the local max of each process
+printf("Local max for process %d is %d\n", rank, local_max);
+
+// Reduce all of the local maxima into the global max
+MPI_Reduce(&local_max, &global_max, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
+
+// Print the global max once at the root
+if (rank == 0) {
+printf("Global max = %d\n", global_max);
+}
+
+// Finalize the MPI environment
+MPI_Finalize();
+
+return 0;
+}
