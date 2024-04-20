@@ -1,114 +1,78 @@
-Slip 21: Java Program to Accept Subject Names and Display Using Iterator, and Java Program to Solve Producer-Consumer Problem
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
 
-1. Java program to accept 'N' subject names from a user, store them into a LinkedList Collection, and display them using the Iterator interface:
+int main() {
+int i, n, req[50], mov = 0, cp;
 
-This Java program accepts 'N' subject names from a user, stores them into a LinkedList Collection, and displays them using the Iterator interface.
+printf("Enter the current position: ");
+scanf("%d", &cp);
 
-```java
-import java.util.*;
+printf("Enter the number of requests: ");
+scanf("%d", &n);
 
-public class SubjectNames {
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("Enter the number of subjects (N): ");
-        int N = scanner.nextInt();
-
-        LinkedList<String> subjects = new LinkedList<>();
-        System.out.println("Enter " + N + " subject names:");
-        for (int i = 0; i < N; i++) {
-            String subject = scanner.next();
-            subjects.add(subject);
-        }
-
-        System.out.println("Subject Names:");
-        Iterator<String> iterator = subjects.iterator();
-        while (iterator.hasNext()) {
-            System.out.println(iterator.next());
-        }
-
-        scanner.close();
-    }
-}
-```
-
-Q2:
-```
-import java.util.*;
-
-class Buffer {
-    private int value;
-    private boolean produced = false;
-
-    // Method for producer to produce a value
-    synchronized void produce(int val) {
-        while (produced) {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        value = val;
-        System.out.println("Produced: " + value);
-        produced = true;
-        notify();
-    }
-
-    // Method for consumer to consume the value
-    synchronized int consume() {
-        while (!produced) {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        System.out.println("Consumed: " + value);
-        produced = false;
-        notify();
-        return value;
-    }
+printf("Enter the request order:\n");
+for (i = 0; i < n; i++) {
+scanf("%d", &req[i]);
 }
 
-class Producer extends Thread {
-    private Buffer buffer;
+mov += abs(cp - req[0]);
+printf("%d -> %d", cp, req[0]);
 
-    Producer(Buffer buffer) {
-        this.buffer = buffer;
-    }
-
-    public void run() {
-        for (int i = 1; i <= 5; i++) {
-            buffer.produce(i);
-            try {
-                sleep(1000); // Sleep for 1 second
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
+for (i = 1; i < n; i++) {
+mov += abs(req[i] - req[i - 1]);
+printf(" -> %d", req[i]);
 }
 
-class Consumer extends Thread {
-    private Buffer buffer;
+printf("\n");
+printf("Total head movement = %d\n", mov);
 
-    Consumer(Buffer buffer) {
-        this.buffer = buffer;
-    }
-
-    public void run() {
-        for (int i = 1; i <= 5; i++) {
-            buffer.consume();
-        }
-    }
+return 0;
 }
 
-public class ProducerConsumer {
-    public static void main(String[] args) {
-        Buffer buffer = new Buffer();
-        Producer producer = new Producer(buffer);
-        Consumer consumer = new Consumer(buffer);
-        producer.start();
-        consumer.start();
-    }
+
+#include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+#define ARRAY_SIZE 1000
+
+int main(int argc, char* argv[]) {
+int rank, size, i;
+int array[ARRAY_SIZE];
+int local_sum = 0, total_sum = 0;
+
+// Initialize the MPI environment
+MPI_Init(&argc, &argv);
+// Get the number of processes
+MPI_Comm_size(MPI_COMM_WORLD, &size);
+// Get the rank of the process
+MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+// Seed the random number generator to get different results each time
+srand(rank + time(NULL));
+
+// Generate random numbers in each process and add to local sum if even
+for (i = rank; i < ARRAY_SIZE; i += size) {
+array[i] = rand() % 100;
+if (array[i] % 2 == 0) {
+local_sum += array[i];
+}
+}
+
+// Reduce all of the local sums into the total sum
+MPI_Reduce(&local_sum, &total_sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+
+// Print the local sum of each process
+printf("Local sum for process %d is %d\n", rank, local_sum);
+
+// Print the total sum once at the root
+if (rank == 0) {
+printf("Total sum = %d\n", total_sum);
+}
+
+// Finalize the MPI environment
+MPI_Finalize();
+return 0;
 }
