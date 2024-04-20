@@ -1,77 +1,136 @@
-Slip 5: Java Program - Hash Table and JSP Page for Online Multiple Choice Test
+#include <stdio.h>
+#define TRUE 1
+#define FALSE 0
 
-1. Java Program to create a hash table that will maintain the mobile number and student name. Display the details of the student using the Enumeration interface:
+int m, n, max[10][10], alloc[10][10], avail[10], need[10][10], finish[10], i, j;
 
-```java
-import java.util.Enumeration;
-import java.util.Hashtable;
+void computeNeed() {
+    for (i = 0; i < m; i++)
+        for (j = 0; j < n; j++)
+            need[i][j] = max[i][j] - alloc[i][j];
+}
 
-public class StudentDetails {
-    public static void main(String[] args) {
-        Hashtable<String, String> studentHashTable = new Hashtable<>();
+int isFeasible(int pno) {
+    int cnt = 0;
+    for (j = 0; j < n; j++)
+        if (need[pno][j] <= avail[j])
+            cnt++;
+    return (cnt == n);
+}
 
-        // Adding student details to the hash table
-        studentHashTable.put("1234567890", "John");
-        studentHashTable.put("9876543210", "Jane");
-        studentHashTable.put("5555555555", "Alice");
+void checkSystem() {
+    int ans[m], cnt = 0, flag;
+    while (TRUE) {
+        flag = FALSE;
+        for (i = 0; i < m; i++)
+            if (!finish[i]) {
+                if (isFeasible(i)) {
+                    flag = TRUE;
+                    finish[i] = TRUE;
+                    ans[cnt++] = i;
+                    for (j = 0; j < n; j++)
+                        avail[j] += alloc[i][j];
+                }
+            }
+        if (!flag)
+            break;
+    }
+    flag = TRUE;
+    for (i = 0; i < m; i++)
+        if (!finish[i])
+            flag = FALSE;
+    if (flag) {
+        printf("\n System is in safe state\n");
+        printf("\n Safe sequence is as follows\n");
+        for (i = 0; i < cnt; i++)
+            printf("p%d\t", ans[i]);
+    } else
+        printf("\n System is not in safe state\n");
+}
 
-        // Displaying student details using Enumeration
-        Enumeration<String> mobileNumbers = studentHashTable.keys();
-        while (mobileNumbers.hasMoreElements()) {
-            String mobileNumber = mobileNumbers.nextElement();
-            String studentName = studentHashTable.get(mobileNumber);
-            System.out.println("Mobile Number: " + mobileNumber + ", Student Name: " + studentName);
+void acceptData(int x[10][10]) {
+    for (i = 0; i < m; i++) {
+        for (j = 0; j < n; j++) {
+            scanf("%d", &x[i][j]);
         }
     }
 }
-JSP page for an online multiple choice test:
-jsp
-Copy code
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
-<%@ page import="java.sql.*" %>
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Online Multiple Choice Test</title>
-</head>
-<body>
-    <h2>Online Multiple Choice Test</h2>
-    <%
-        try {
-            // Establishing database connection
-            Class.forName("org.postgresql.Driver");
-            Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/your_database", "username", "password");
-            Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT * FROM questions ORDER BY RANDOM() LIMIT 1"); // Randomly selecting a question
-            
-            if (rs.next()) {
-                String question = rs.getString("question");
-                String choice1 = rs.getString("choice1");
-                String choice2 = rs.getString("choice2");
-                String choice3 = rs.getString("choice3");
-                String choice4 = rs.getString("choice4");
-    %>
-    <form method="post" action="submitTest.jsp">
-        <p><%= question %></p>
-        <input type="radio" name="answer" value="1"> <%= choice1 %><br>
-        <input type="radio" name="answer" value="2"> <%= choice2 %><br>
-        <input type="radio" name="answer" value="3"> <%= choice3 %><br>
-        <input type="radio" name="answer" value="4"> <%= choice4 %><br>
-        <input type="submit" value="Next">
-    </form>
-    <%
-            } else {
-                out.println("No questions found.");
-            }
-            // Closing resources
-            rs.close();
-            stmt.close();
-            con.close();
-        } catch(Exception e) {
-            out.println(e);
-        }
-    %>
-</body>
-</html>
+
+void displayData() {
+    printf("\n\tAllocation\tMax\tNeed\n");
+    for (i = 0; i < m; i++) {
+        printf("\n p%d\t", i);
+        for (j = 0; j < n; j++)
+            printf("%4d", alloc[i][j]);
+        printf("\t");
+        for (j = 0; j < n; j++)
+            printf("%4d", max[i][j]);
+        printf("\t");
+        for (j = 0; j < n; j++)
+            printf("%4d", need[i][j]);
+    }
+    printf("\n Available\n");
+    for (j = 0; j < n; j++)
+        printf("%4d", avail[j]);
+}
+
+int main() {
+    printf("\n Enter the number of processes and resources");
+    scanf("%d %d", &m, &n);
+    printf("\n Enter the allocation\n");
+    acceptData(alloc);
+    printf("\n Enter the max limit\n");
+    acceptData(max);
+    printf("\n Enter the availability\n");
+    for (i = 0; i < n; i++)
+        scanf("%d", &avail[i]);
+    computeNeed();
+    displayData();
+    checkSystem();
+    return 0;
+}
+
+#include <stdio.h>
+#include <mpi.h>
+#include <stdlib.h>
+#include <time.h>
+
+#define ARRAY_SIZE 1000
+
+int main(int argc, char* argv[]) {
+int rank, size, i;
+int array[ARRAY_SIZE];
+int local_max = 0, global_max;
+
+// Initialize MPI
+MPI_Init(&argc, &argv);
+MPI_Comm_size(MPI_COMM_WORLD, &size);
+MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+// Seed the random number generator
+srand(rank + time(NULL));
+
+// Generate random numbers
+for (i = 0; i < ARRAY_SIZE; i++) {
+array[i] = rand() % 1000;
+if (array[i] > local_max) {
+local_max = array[i];
+}
+}
+
+// Print local max
+printf("Local max for process %d is %d\n", rank, local_max);
+
+// Reduce local max to global max
+MPI_Reduce(&local_max, &global_max, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
+
+// Print global max at root process
+if (rank == 0) {
+printf("Global max = %d\n", global_max);
+}
+
+// Finalize MPI
+MPI_Finalize();
+
+return 0;
+}
