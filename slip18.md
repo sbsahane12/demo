@@ -1,92 +1,187 @@
-Slip 18: Java Program to Display Thread Name and Priority and Servlet Program to Accept Student Details
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
-1. Java program to display the name and priority of a Thread:
+struct dirfile {
+    char fname[20];
+    int length;
+    int indexblock;
+    int a[10];
+} direntry[20];
 
-This Java program displays the name and priority of a thread.
+int bv[64];
+int used = 0;
+int totalfile = 0;
+int n;
 
-```java
-public class ThreadInfo {
-    public static void main(String[] args) {
-        Thread thread = Thread.currentThread();
-        System.out.println("Thread Name: " + thread.getName());
-        System.out.println("Thread Priority: " + thread.getPriority());
+void initialize() {
+    int i;
+    srand(time(NULL));
+    for (i = 0; i < n; i++) {
+        if (rand() % 2 == 0) {
+            bv[i] = 0;
+            used++;
+        } else {
+            bv[i] = 1;
+        }
     }
 }
-```
 
-Q2:
-```
-import java.io.*;
-import javax.servlet.*;
-import javax.servlet.http.*;
+void showbv() {
+    printf("block number\t status\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d\t\t%s\n", i, bv[i] == 0 ? "allocated" : "Free");
+    }
+}
 
-public class StudentDetailsServlet extends HttpServlet {
-    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        response.setContentType("text/html");
-        PrintWriter out = response.getWriter();
+int findFreeBlock() {
+    for (int i = 0; i < n; ++i) {
+        if (bv[i] == 1) {
+            return i;
+        }
+    }
+    return -1; // No free block found
+}
 
-        // Getting parameters from the request
-        int seatNo = Integer.parseInt(request.getParameter("seatNo"));
-        String studentName = request.getParameter("studentName");
-        String studentClass = request.getParameter("studentClass");
-        int totalMarks = Integer.parseInt(request.getParameter("totalMarks"));
-
-        // Calculating percentage and grade
-        double percentage = (double) totalMarks / 500 * 100;
-        String grade;
-        if (percentage >= 90) {
-            grade = "A+";
-        } else if (percentage >= 80) {
-            grade = "A";
-        } else if (percentage >= 70) {
-            grade = "B+";
-        } else if (percentage >= 60) {
-            grade = "B";
-        } else if (percentage >= 50) {
-            grade = "C";
-        } else {
-            grade = "F";
+void allocateBlocks(int length) {
+    int allocatedblk = 0;
+    int blocknum;
+    direntry[totalfile].indexblock = 0;
+    while (allocatedblk < length) {
+        blocknum = findFreeBlock();
+        if (blocknum == -1) {
+            printf("Error: No free space available!\n");
+            return;
         }
 
-        // Displaying student details
-        out.println("<h2>Student Details</h2>");
-        out.println("<p>Seat No: " + seatNo + "</p>");
-        out.println("<p>Student Name: " + studentName + "</p>");
-        out.println("<p>Class: " + studentClass + "</p>");
-        out.println("<p>Total Marks: " + totalMarks + "</p>");
-        out.println("<p>Percentage: " + percentage + "%</p>");
-        out.println("<p>Grade: " + grade + "</p>");
+        // Allocate block
+        bv[blocknum] = 0;
+        if (direntry[totalfile].indexblock == 0) {
+            direntry[totalfile].indexblock = blocknum;
+        } else {
+            direntry[totalfile].a[allocatedblk] = blocknum;
+            allocatedblk++;
+        }
     }
 }
-```
-Q2 1:
-```
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Student Details</title>
-</head>
-<body>
-    <h2>Enter Student Details</h2>
-    <form action="StudentDetailsServlet" method="post">
-        <label for="seatNo">Seat No:</label>
-        <input type="text" id="seatNo" name="seatNo" required><br><br>
-        
-        <label for="studentName">Student Name:</label>
-        <input type="text" id="studentName" name="studentName" required><br><br>
-        
-        <label for="studentClass">Class:</label>
-        <input type="text" id="studentClass" name="studentClass" required><br><br>
-        
-        <label for="totalMarks">Total Marks:</label>
-        <input type="text" id="totalMarks" name="totalMarks" required><br><br>
-        
-        <input type="submit" value="Submit">
-    </form>
-</body>
-</html>
-```
 
+void createfile() {
+    char fname[20];
+    int length;
+    printf("\nEnter File Name : ");
+    scanf("%s", fname);
+    printf("Enter the length of file:");
+    scanf("%d", &length);
+    allocateBlocks(length);
+    printf("\nBlock allocated\n");
+    used += length;
+    int k = totalfile++;
+    strcpy(direntry[k].fname, fname);
+    direntry[k].length = length;
+}
+
+void displaydir() {
+    printf("\tfilename\tstart_block\n");
+    for (int k = 0; k < totalfile; k++) {
+        printf("%s\t%d\t", direntry[k].fname, direntry[k].indexblock);
+        printf("\tBlocks: ");
+        for (int i = 0; i < direntry[k].length; i++) {
+            printf("%d ", direntry[k].a[i]);
+        }
+        printf("\n");
+    }
+    printf("\nUsed blocks: %d\n", used);
+    printf("Free blocks: %d\n", n - used);
+}
+
+int main() {
+    int choice;
+    printf("Enter the number of blocks in the disk: ");
+    scanf("%d", &n);
+    initialize();
+    do {
+        printf("\nMenu:\n");
+        printf("1. Bit vector\n");
+        printf("2. Create new file\n");
+        printf("3. Show directory\n");
+        printf("4. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+        switch (choice) {
+            case 1:
+                showbv();
+                break;
+            case 2:
+                createfile();
+                break;
+            case 3:
+                displaydir();
+                break;
+            case 4:
+                printf("Exiting...\n");
+                break;
+            default:
+                printf("Error: Invalid choice\n");
+                break;
+        }
+    } while (choice != 4);
+    return 0;
+}
+#include<stdio.h>
+
+int main() {
+    int queue[20], n, head, i, j, k, seek = 0, max, diff, temp, queue1[20], queue2[20], temp1 = 0, temp2 = 0;
+    float avg;
+    printf("Enter the max range of disk: ");
+    scanf("%d", &max);
+    printf("Enter the initial head position: ");
+    scanf("%d", &head);
+    printf("Enter the size of queue request: ");
+    scanf("%d", &n);
+    printf("Enter the queue of disk positions to be read: ");
+    for (i = 1; i <= n; i++) {
+        scanf("%d", &temp);
+        if (temp >= head) {
+            queue1[temp1] = temp;
+            temp1++;
+        } else {
+            queue2[temp2] = temp;
+            temp2++;
+        }
+    }
+    for (i = 0; i < temp1 - 1; i++) {
+        for (j = i + 1; j < temp1; j++) {
+            if (queue1[i] > queue1[j]) {
+                temp = queue1[i];
+                queue1[i] = queue1[j];
+                queue1[j] = temp;
+            }
+        }
+    }
+    for (i = 0; i < temp2 - 1; i++) {
+        for (j = i + 1; j < temp2; j++) {
+            if (queue2[i] < queue2[j]) {
+                temp = queue2[i];
+                queue2[i] = queue2[j];
+                queue2[j] = temp;
+            }
+        }
+    }
+    for (i = 1, j = 0; j < temp1; i++, j++)
+        queue[i] = queue1[j];
+    queue[i] = max;
+    for (i = temp1 + 2, j = 0; j < temp2; i++, j++)
+        queue[i] = queue2[j];
+    queue[i] = 0;
+    queue[0] = head;
+    for (j = 0; j <= n + 1; j++) {
+        diff = abs(queue[j + 1] - queue[j]);
+        seek += diff;
+        printf("Disk head moves from %d to %d with %d\n", queue[j], queue[j + 1], diff);
+    }
+    printf("Total seek time is %d\n", seek);
+    avg = seek / (float) n;
+    printf("Average seek time is %f\n", avg);
+    return 0;
+}
