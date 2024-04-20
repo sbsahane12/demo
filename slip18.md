@@ -1,4 +1,126 @@
 #include<stdio.h>
+#include<stdbool.h>
+
+#define M 10
+#define N 10
+
+int m, n, max[M][N], alloc[M][N], avl[N], need[M][N], finish[M];
+
+void computeNeed() {
+    for (int i = 0; i < m; i++)
+        for (int j = 0; j < n; j++)
+            need[i][j] = max[i][j] - alloc[i][j];
+}
+
+bool isFeasible(int pno) {
+    int cnt = 0;
+    for (int j = 0; j < n; j++)
+        if (need[pno][j] <= avl[j])
+            cnt++;
+    return cnt == n;
+}
+
+void checkSystem() {
+    int ans[M], cnt = 0;
+    bool flag;
+    for (int i = 0; i < m; i++)
+        finish[i] = 0;
+
+    while (1) {
+        flag = false;
+        for (int i = 0; i < m; i++) {
+            if (!finish[i]) {
+                printf("\nTrying for p%d", i);
+                if (isFeasible(i)) {
+                    flag = true;
+                    printf("\nProcess p%d granted resources\n", i);
+                    finish[i] = 1;
+                    ans[cnt++] = i;
+                    for (int j = 0; j < n; j++)
+                        avl[j] += alloc[i][j];
+                } else {
+                    printf("\nProcess p%d cannot be granted resources\n", i);
+                }
+            }
+        }
+        if (!flag)
+            break;
+    }
+
+    flag = true;
+    for (int i = 0; i < m; i++)
+        if (!finish[i])
+            flag = false;
+    if (flag) {
+        printf("\nSystem is in safe state\n");
+        printf("\nSafe sequence is as follows\n");
+        for (int i = 0; i < cnt; i++)
+            printf("p%d\t", ans[i]);
+    } else {
+        printf("\nSystem is not in safe state\n");
+    }
+}
+
+void acceptData(int x[M][N]) {
+    for (int i = 0; i < m; i++) {
+        printf("p%d\n", i);
+        for (int j = 0; j < n; j++) {
+            printf("%c: ", 65 + j);
+            scanf("%d", &x[i][j]);
+        }
+    }
+}
+
+void acceptAvailability() {
+    for (int i = 0; i < n; i++) {
+        printf("%c: ", 65 + i);
+        scanf("%d", &avl[i]);
+    }
+}
+
+void displayData() {
+    printf("\n\tAllocation\t\tMax\t\tNeed\n");
+    printf("\t");
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++)
+            printf("%4c", 65 + j);
+        printf("\t");
+    }
+    for (int i = 0; i < m; i++) {
+        printf("\n p%d\t", i);
+        for (int j = 0; j < n; j++)
+            printf("%4d", alloc[i][j]);
+        printf("\t");
+        for (int j = 0; j < n; j++)
+            printf("%4d", max[i][j]);
+        printf("\t");
+        for (int j = 0; j < n; j++)
+            printf("%4d", need[i][j]);
+    }
+    printf("\n Available\n");
+    for (int j = 0; j < n; j++)
+        printf("%4d", avl[j]);
+}
+
+int main() {
+    printf("\nEnter the number of processes and resources: ");
+    scanf("%d %d", &m, &n);
+    printf("\nEnter the allocation: \n");
+    acceptData(alloc);
+    printf("\nEnter the max limit: \n");
+    acceptData(max);
+    printf("\nEnter the availability: \n");
+    acceptAvailability();
+    computeNeed();
+    displayData();
+    checkSystem();
+    return 0;
+}
+
+
+
+
+#include<stdio.h>
 
 int main() {
     int queue[20], n, head, i, j, k, seek = 0, max, diff, temp, queue1[20], queue2[20], temp1 = 0, temp2 = 0;
@@ -55,3 +177,5 @@ int main() {
     printf("Average seek time is %f\n", avg);
     return 0;
 }
+
+
