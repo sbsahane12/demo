@@ -1,70 +1,183 @@
-Slip 2: Java Program to read names and servlet design
 
-1. Java program to read 'N' names of your friends, store it into HashSet, and display them in ascending order:
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
-```java
-import java.util.HashSet;
-import java.util.Scanner;
-import java.util.Set;
-import java.util.TreeSet;
+struct block {
+    int blkno;
+    struct block *next;
+};
 
-public class FriendsNames {
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
+struct dirfile {
+    char fname[20];
+    int length;
+    struct block *startblk;
+} direntry[20];
 
-        System.out.print("Enter the number of friends (N): ");
-        int n = scanner.nextInt();
+int bv[64];
+int used = 0;
+int totalfile = 0;
+int n;
 
-        Set<String> friendsSet = new HashSet<>();
-
-        System.out.println("Enter the names of your friends:");
-        for (int i = 0; i < n; i++) {
-            System.out.print("Friend " + (i + 1) + ": ");
-            String name = scanner.next();
-            friendsSet.add(name);
-        }
-
-        TreeSet<String> sortedFriends = new TreeSet<>(friendsSet);
-
-        System.out.println("\nList of friends in ascending order:");
-        for (String friend : sortedFriends) {
-            System.out.println(friend);
-        }
-    }
-}
-```
-2)Servlet to provide information about an HTTP request and server details:
-```
-Copy code
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.Enumeration;
-
-@WebServlet("/requestinfo")
-public class RequestInfoServlet extends HttpServlet {
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        response.setContentType("text/html");
-        PrintWriter out = response.getWriter();
-
-        // Client request information
-        out.println("<h2>Client Request Information:</h2>");
-        out.println("<strong>IP Address:</strong> " + request.getRemoteAddr() + "<br>");
-        out.println("<strong>Browser Type:</strong> " + request.getHeader("User-Agent") + "<br>");
-
-        // Server information
-        out.println("<h2>Server Information:</h2>");
-        out.println("<strong>Operating System Type:</strong> " + System.getProperty("os.name") + "<br>");
-
-        // Loaded servlets
-        out.println("<h2>Loaded Servlets:</h2>");
-        Enumeration<String> servletNames = getServletContext().getServletRegistrationNames();
-        while (servletNames.hasMoreElements()) {
-            out.println("<strong>Servlet Name:</strong> " + servletNames.nextElement() + "<br>");
+void initBitVector() {
+    srand(time(NULL));
+    for (int i = 0; i < n; i++) {
+        if (rand() % 2 == 0) {
+            bv[i] = 0;
+            used++;
+        } else {
+            bv[i] = 1;
         }
     }
 }
-```
+
+void showBitVector() {
+    printf("Block number\tStatus\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d\t\t%s\n", i, bv[i] == 0 ? "Allocated" : "Free");
+    }
+}
+
+int findFreeBlock() {
+    for (int i = 0; i < n; ++i) {
+        if (bv[i] == 1) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+struct block* allocateBlocks(int length) {
+    struct block* start = NULL;
+    struct block* current = NULL;
+    int allocatedblk = 0;
+    int blocknum;
+    while (allocatedblk < length) {
+        blocknum = findFreeBlock();
+        if (blocknum == -1) {
+            printf("Error: No free space available!\n");
+            return NULL;
+        }
+        bv[blocknum] = 0;
+        struct block* newblock = (struct block*)malloc(sizeof(struct block));
+        if (newblock == NULL) {
+            printf("Memory allocation failed!\n");
+            return NULL;
+        }
+        newblock->blkno = blocknum;
+        newblock->next = NULL;
+        if (start == NULL) {
+            start = newblock;
+        } else {
+            current->next = newblock;
+        }
+        current = newblock;
+        allocatedblk++;
+    }
+    return start;
+}
+
+void createFile() {
+    char fname[10];
+    int length, k;
+    struct block *sblock = NULL;
+    printf("\nEnter File Name: ");
+    scanf("%s", &fname);
+    printf("Enter the length of file: ");
+    scanf("%d", &length);
+    sblock = allocateBlocks(length);
+    if (sblock == NULL) {
+        printf("File creation failed!\n");
+        return;
+    }
+    printf("\nBlocks allocated\n");
+    used += length;
+    k = totalfile++;
+    strcpy(direntry[k].fname, fname);
+    direntry[k].startblk = sblock;
+}
+
+void displayDirectory() {
+    printf("\tFilename\tStart_Block\n");
+    for (int k = 0; k < totalfile; k++) {
+        printf("%s\tBlocks: ", direntry[k].fname);
+        struct block* current = direntry[k].startblk;
+        while (current != NULL) {
+            printf("%d ", current->blkno);
+            current = current->next;
+        }
+        printf("\n\n");
+    }
+    printf("\nUsed blocks = %d\n", used);
+    printf("Free blocks = %d\n", n - used);
+}
+
+int main() {
+    int choice;
+    printf("Enter the number of blocks in the disk: ");
+    scanf("%d", &n);
+    initBitVector();
+    do {
+        printf("\nMenu:\n");
+        printf("1. Bit Vector\n");
+        printf("2. Create new file\n");
+        printf("3. Show directory\n");
+        printf("4. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+        switch (choice) {
+            case 1:
+                showBitVector();
+                break;
+            case 2:
+                createFile();
+                break;
+            case 3:
+                displayDirectory();
+                break;
+            case 4:
+                printf("Exiting...\n");
+                break;
+            default:
+                printf("Error: Invalid choice\n");
+                break;
+        }
+    } while (choice != 4);
+    return 0;
+}
+
+#include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+#define ARRAY_SIZE 1000
+
+int main(int argc, char* argv[]) {
+    int rank, size, i;
+    int array[ARRAY_SIZE];
+    int local_sum = 0, total_sum;
+    
+    MPI_Init(&argc, &argv);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    
+    srand(rank + time(NULL));
+    
+    for (i = 0; i < ARRAY_SIZE; i++) {
+        array[i] = rand() % 100;
+        local_sum += array[i];
+    }
+    
+    printf("Local sum for process %d is %d\n", rank, local_sum);
+    
+    MPI_Reduce(&local_sum, &total_sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    
+    if (rank == 0) {
+        printf("Total sum = %d\n", total_sum);
+    }
+    
+    MPI_Finalize();
+    return 0;
+}
