@@ -1,133 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-
-struct dirfile {
-    char fname[20];
-    int length;
-    int indexblock;
-    int a[10];
-} direntry[20];
-
-int bv[64];
-int used = 0;
-int totalfile = 0;
-int n;
-
-void initialize() {
-    int i;
-    srand(time(NULL));
-    for (i = 0; i < n; i++) {
-        if (rand() % 2 == 0) {
-            bv[i] = 0;
-            used++;
-        } else {
-            bv[i] = 1;
-        }
-    }
-}
-
-void showbv() {
-    printf("block number\t status\n");
-    for (int i = 0; i < n; i++) {
-        printf("%d\t\t%s\n", i, bv[i] == 0 ? "allocated" : "Free");
-    }
-}
-
-int findFreeBlock() {
-    for (int i = 0; i < n; ++i) {
-        if (bv[i] == 1) {
-            return i;
-        }
-    }
-    return -1; // No free block found
-}
-
-void allocateBlocks(int length) {
-    int allocatedblk = 0;
-    int blocknum;
-    direntry[totalfile].indexblock = 0;
-    while (allocatedblk < length) {
-        blocknum = findFreeBlock();
-        if (blocknum == -1) {
-            printf("Error: No free space available!\n");
-            return;
-        }
-
-        // Allocate block
-        bv[blocknum] = 0;
-        if (direntry[totalfile].indexblock == 0) {
-            direntry[totalfile].indexblock = blocknum;
-        } else {
-            direntry[totalfile].a[allocatedblk] = blocknum;
-            allocatedblk++;
-        }
-    }
-}
-
-void createfile() {
-    char fname[20];
-    int length;
-    printf("\nEnter File Name : ");
-    scanf("%s", fname);
-    printf("Enter the length of file:");
-    scanf("%d", &length);
-    allocateBlocks(length);
-    printf("\nBlock allocated\n");
-    used += length;
-    int k = totalfile++;
-    strcpy(direntry[k].fname, fname);
-    direntry[k].length = length;
-}
-
-void displaydir() {
-    printf("\tfilename\tstart_block\n");
-    for (int k = 0; k < totalfile; k++) {
-        printf("%s\t%d\t", direntry[k].fname, direntry[k].indexblock);
-        printf("\tBlocks: ");
-        for (int i = 0; i < direntry[k].length; i++) {
-            printf("%d ", direntry[k].a[i]);
-        }
-        printf("\n");
-    }
-    printf("\nUsed blocks: %d\n", used);
-    printf("Free blocks: %d\n", n - used);
-}
-
-int main() {
-    int choice;
-    printf("Enter the number of blocks in the disk: ");
-    scanf("%d", &n);
-    initialize();
-    do {
-        printf("\nMenu:\n");
-        printf("1. Bit vector\n");
-        printf("2. Create new file\n");
-        printf("3. Show directory\n");
-        printf("4. Exit\n");
-        printf("Enter your choice: ");
-        scanf("%d", &choice);
-        switch (choice) {
-            case 1:
-                showbv();
-                break;
-            case 2:
-                createfile();
-                break;
-            case 3:
-                displaydir();
-                break;
-            case 4:
-                printf("Exiting...\n");
-                break;
-            default:
-                printf("Error: Invalid choice\n");
-                break;
-        }
-    } while (choice != 4);
-    return 0;
-}
 #include<stdio.h>
 
 int main() {
@@ -161,7 +31,7 @@ int main() {
     }
     for (i = 0; i < temp2 - 1; i++) {
         for (j = i + 1; j < temp2; j++) {
-            if (queue2[i] < queue2[j]) {
+            if (queue2[i] > queue2[j]) {
                 temp = queue2[i];
                 queue2[i] = queue2[j];
                 queue2[j] = temp;
@@ -171,9 +41,9 @@ int main() {
     for (i = 1, j = 0; j < temp1; i++, j++)
         queue[i] = queue1[j];
     queue[i] = max;
-    for (i = temp1 + 2, j = 0; j < temp2; i++, j++)
+    queue[i + 1] = 0;
+    for (i = temp1 + 3, j = 0; j < temp2; i++, j++)
         queue[i] = queue2[j];
-    queue[i] = 0;
     queue[0] = head;
     for (j = 0; j <= n + 1; j++) {
         diff = abs(queue[j + 1] - queue[j]);
