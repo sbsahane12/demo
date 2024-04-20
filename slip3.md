@@ -1,133 +1,127 @@
-Slip 3: JSP Program and Java LinkedList Operations
+#include <stdio.h>
+#define TRUE 1
+#define FALSE 0
 
-1. JSP program to display the details of Patient (PNo, PName, Address, age, disease) in tabular form on the browser:
+int m, n, max[10][10], alloc[10][10], avail[10], need[10][10], finish[10], i, j;
 
-```jsp
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Patient Details</title>
-</head>
-<body>
-    <h2>Patient Details</h2>
-    <table border="1">
-        <tr>
-            <th>Patient Number</th>
-            <th>Name</th>
-            <th>Address</th>
-            <th>Age</th>
-            <th>Disease</th>
-        </tr>
-        <%
-            // Sample data for demonstration
-            String[][] patients = {{"1", "John Doe", "123 Main St", "35", "Fever"},
-                                    {"2", "Jane Smith", "456 Elm St", "28", "Cough"}};
-            
-            // Displaying patient details in tabular form
-            for (String[] patient : patients) {
-        %>
-        <tr>
-            <td><%= patient[0] %></td>
-            <td><%= patient[1] %></td>
-            <td><%= patient[2] %></td>
-            <td><%= patient[3] %></td>
-            <td><%= patient[4] %></td>
-        </tr>
-        <% } %>
-    </table>
-</body>
-</html>
-```
-1)Using Database
-Slip 3: JSP Program and Java LinkedList Operations
+void computeNeed() {
+    for (i = 0; i < m; i++)
+        for (j = 0; j < n; j++)
+            need[i][j] = max[i][j] - alloc[i][j];
+}
 
-1. JSP program to display the details of Patient (PNo, PName, Address, age, disease) in tabular form on the browser:
+int isFeasible(int pno) {
+    int cnt = 0;
+    for (j = 0; j < n; j++)
+        if (need[pno][j] <= avail[j])
+            cnt++;
+    return (cnt == n);
+}
 
-```jsp
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
-<%@ page import="java.sql.*" %>
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Patient Details</title>
-</head>
-<body>
-    <h2>Patient Details</h2>
-    <table border="1">
-        <tr>
-            <th>Patient Number</th>
-            <th>Name</th>
-            <th>Address</th>
-            <th>Age</th>
-            <th>Disease</th>
-        </tr>
-        <%
-            try {
-                // Establishing database connection
-                Class.forName("org.postgresql.Driver");
-                Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/your_database", "username", "password");
-                Statement stmt = con.createStatement();
-                ResultSet rs = stmt.executeQuery("SELECT * FROM patients");
-                
-                // Displaying patient details from database in tabular form
-                while (rs.next()) {
-        %>
-        <tr>
-            <td><%= rs.getString("PNo") %></td>
-            <td><%= rs.getString("PName") %></td>
-            <td><%= rs.getString("Address") %></td>
-            <td><%= rs.getString("Age") %></td>
-            <td><%= rs.getString("Disease") %></td>
-        </tr>
-        <%
+void checkSystem() {
+    int ans[m], cnt = 0, flag;
+    while (TRUE) {
+        flag = FALSE;
+        for (i = 0; i < m; i++)
+            if (!finish[i]) {
+                if (isFeasible(i)) {
+                    flag = TRUE;
+                    finish[i] = TRUE;
+                    ans[cnt++] = i;
+                    for (j = 0; j < n; j++)
+                        avail[j] += alloc[i][j];
                 }
-                // Closing resources
-                rs.close();
-                stmt.close();
-                con.close();
-            } catch(Exception e) {
-                out.println(e);
             }
-        %>
-    </table>
-</body>
-</html>
-```
-2)Java program to create LinkedList of String objects and perform the following operations:
+        if (!flag)
+            break;
+    }
+    flag = TRUE;
+    for (i = 0; i < m; i++)
+        if (!finish[i])
+            flag = FALSE;
+    if (flag) {
+        printf("\n System is in safe state\n");
+        printf("\n Safe sequence is as follows\n");
+        for (i = 0; i < cnt; i++)
+            printf("p%d\t", ans[i]);
+    } else
+        printf("\n System is not in safe state\n");
+}
 
-```java
-import java.util.LinkedList;
-public class LinkedListOperations {
-    public static void main(String[] args) {
-        // Creating a LinkedList of String objects
-        LinkedList<String> linkedList = new LinkedList<>();
-
-        // i. Add element at the end of the list
-        linkedList.add("Apple");
-        linkedList.add("Banana");
-        linkedList.add("Orange");
-
-        // Displaying initial contents of the list
-        System.out.println("Initial LinkedList: " + linkedList);
-
-        // ii. Delete first element of the list
-        if (!linkedList.isEmpty()) {
-            linkedList.removeFirst();
-            System.out.println("After removing first element: " + linkedList);
-        } else {
-            System.out.println("LinkedList is empty.");
-        }
-
-        // iii. Display the contents of list in reverse order
-        System.out.println("Contents of list in reverse order:");
-        for (int i = linkedList.size() - 1; i >= 0; i--) {
-            System.out.println(linkedList.get(i));
+void acceptData(int x[10][10]) {
+    for (i = 0; i < m; i++) {
+        for (j = 0; j < n; j++) {
+            scanf("%d", &x[i][j]);
         }
     }
 }
-```
+
+void displayData() {
+    printf("\n\tAllocation\tMax\tNeed\n");
+    for (i = 0; i < m; i++) {
+        printf("\n p%d\t", i);
+        for (j = 0; j < n; j++)
+            printf("%4d", alloc[i][j]);
+        printf("\t");
+        for (j = 0; j < n; j++)
+            printf("%4d", max[i][j]);
+        printf("\t");
+        for (j = 0; j < n; j++)
+            printf("%4d", need[i][j]);
+    }
+    printf("\n Available\n");
+    for (j = 0; j < n; j++)
+        printf("%4d", avail[j]);
+}
+
+int main() {
+    printf("\n Enter the number of processes and resources");
+    scanf("%d %d", &m, &n);
+    printf("\n Enter the allocation\n");
+    acceptData(alloc);
+    printf("\n Enter the max limit\n");
+    acceptData(max);
+    printf("\n Enter the availability\n");
+    for (i = 0; i < n; i++)
+        scanf("%d", &avail[i]);
+    computeNeed();
+    displayData();
+    checkSystem();
+    return 0;
+}
+
+
+#include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+#define ARRAY_SIZE 1000
+
+int main(int argc, char* argv[]) {
+int rank, size, i;
+int array[ARRAY_SIZE];
+int local_sum = 0, total_sum;
+
+MPI_Init(&argc, &argv);
+MPI_Comm_size(MPI_COMM_WORLD, &size);
+MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+srand(rank + time(NULL));
+
+for (i = 0; i < ARRAY_SIZE; i++) {
+array[i] = rand() % 100;
+local_sum += array[i];
+}
+
+printf("Local sum for process %d is %d\n", rank, local_sum);
+
+MPI_Reduce(&local_sum, &total_sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+
+if (rank == 0) {
+printf("Total sum = %d\n", total_sum);
+}
+
+MPI_Finalize();
+return 0;
+}
