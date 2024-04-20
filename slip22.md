@@ -1,112 +1,309 @@
-Slip 22: Java Menu Driven Program for Employee Table Operations and JSP Program to Greet User According to Server Time
+#include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
-1. Java menu-driven program for Employee table operations:
+#define ARRAY_SIZE 1000
 
-This Java program presents a menu-driven interface for performing operations on an Employee table. The assumed Employee table has attributes (ENo, EName, Salary).
+int main(int argc, char* argv[]) {
+int rank, size, i;
+int array[ARRAY_SIZE];
+int local_sum = 0, total_sum = 0;
 
-```java
-import java.util.*;
-import java.sql.*;
+// Initialize the MPI environment
+MPI_Init(&argc, &argv);
+// Get the number of processes
+MPI_Comm_size(MPI_COMM_WORLD, &size);
+// Get the rank of the process
+MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-public class EmployeeMenu {
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        String url = "jdbc:postgresql://localhost:5432/your_database";
-        String username = "username";
-        String password = "password";
+// Seed the random number generator to get different results each time
+srand(rank + time(NULL));
 
-        try {
-            Connection con = DriverManager.getConnection(url, username, password);
-            Statement stmt = con.createStatement();
-            
-            while (true) {
-                System.out.println("Menu:");
-                System.out.println("1. Insert");
-                System.out.println("2. Update");
-                System.out.println("3. Display");
-                System.out.println("4. Exit");
-                System.out.print("Enter your choice: ");
-                int choice = scanner.nextInt();
+// Generate random numbers in each process and add to local sum if odd
+for(i = 0; i < ARRAY_SIZE; i++) {
+array[i] = rand() % 100;
+if(array[i] % 2 != 0) {
+local_sum += array[i];
+}
+}
 
-                switch (choice) {
-                    case 1:
-                        // Insert operation
-                        System.out.println("Enter Employee details:");
-                        System.out.print("ENo: ");
-                        int eno = scanner.nextInt();
-                        System.out.print("EName: ");
-                        String ename = scanner.next();
-                        System.out.print("Salary: ");
-                        double salary = scanner.nextDouble();
-                        String insertQuery = "INSERT INTO Employee (ENo, EName, Salary) VALUES (" + eno + ", '" + ename + "', " + salary + ")";
-                        int insertResult = stmt.executeUpdate(insertQuery);
-                        if (insertResult > 0) {
-                            System.out.println("Employee inserted successfully.");
-                        } else {
-                            System.out.println("Error in inserting employee.");
-                        }
-                        break;
+// Print the local sum of each process
+printf("Local sum for process %d is %d\n", rank, local_sum);
 
-                    case 2:
-                        // Update operation
-                        // Your code for update operation
-                        break;
+// Reduce all of the local sums into the total sum
+MPI_Reduce(&local_sum, &total_sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
-                    case 3:
-                        // Display operation
-                        ResultSet rs = stmt.executeQuery("SELECT * FROM Employee");
-                        System.out.println("Employee Details:");
-                        while (rs.next()) {
-                            System.out.println("ENo: " + rs.getInt("ENo") + ", EName: " + rs.getString("EName") + ", Salary: " + rs.getDouble("Salary"));
-                        }
-                        rs.close();
-                        break;
+// Print the total sum once at the root
+if (rank == 0) {
+printf("Total sum = %d\n", total_sum);
+}
 
-                    case 4:
-                        // Exit
-                        con.close();
-                        System.exit(0);
+// Finalize the MPI environment
+MPI_Finalize();
+return 0;
+}
 
-                    default:
-                        System.out.println("Invalid choice. Please enter a valid choice.");
-                }
-            }
-        } catch (Exception e) {
-            System.out.println(e);
-        } finally {
-            scanner.close();
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<time.h>
+
+struct dirfile {
+char fname[20];
+int startblk, length;
+} direntry[20];
+
+int bv[64];
+int used = 0;
+int totalfile = 0;
+int n;
+
+void initialize() {
+int i;
+srand(time(NULL));
+for(i = 0; i < n; i++) {
+if(rand() % 2 == 0) {
+bv[i] = 0;
+used++;
+} else {
+bv[i] = 1;
+}
+}
+}
+
+void showbv() {
+int i;
+printf("block number \t status\n");
+for(i = 0; i < n; i++) {
+printf("%d\t\t", i);
+if(bv[i] == 0) {
+printf("allocated\n");
+} else {
+printf("free\n");
+}
+}
+}
+
+int search(int length) {
+int i, j, flag = 1, blknum;
+for(i = 0; i < n; i++) {
+if(bv[i] == 1) {
+flag = 1;
+for(blknum = i, j = 0; j < length; j++) {
+if(bv[blknum] == 1) {
+blknum++;
+continue;
+} else {
+flag = 0;
+break;
+}
+}
+if(flag == 1) return i;
+}
+}
+return -1;
+}
+
+void createfile() {
+char fname[10];
+int length, blknum, k;
+printf("\nEnter file name: ");
+scanf("%s", fname);
+printf("\nEnter the length of file: ");
+scanf("%d", &length);
+if(length <= n - used) {
+blknum = search(length);
+} else {
+blknum = -1;
+}
+if(blknum == -1) {
+printf("Error: No disk space available\n");
+} else {
+printf("\nBlock allocated\n");
+used += length;
+for(k = blknum; k < (blknum + length); k++) {
+bv[k] = 0;
+}
+k = totalfile++;
+strcpy(direntry[k].fname, fname);
+direntry[k].startblk = blknum;
+direntry[k].length = length;
+}
+}
+
+void displaydir() {
+int k;
+printf("\tFilename\tStart\tSize\n");
+for(k = 0; k < totalfile; k++) {
+printf("%s\t%d\t%d\n", direntry[k].fname, direntry[k].startblk, direntry[k].length);
+}
+printf("\nUsed block = %d", used);
+printf("\nFree block = %d", n - used);
+}
+
+int main() {
+int choice;
+printf("Enter the number of blocks in the disk: ");
+scanf("%d", &n);
+initialize();
+do {
+printf("\nMenu\n");
+printf("1. Bit vector\n");
+printf("2. Create new file\n");
+printf("3. Show directory\n");
+printf("4. Exit\n");
+printf("Enter your choice: ");
+scanf("%d", &choice);
+switch(choice) {
+case 1:
+showbv(n);
+break;
+case 2:
+createfile();
+break;
+case 3:
+displaydir();
+break;
+case 4:
+printf("Exiting...\n");
+break;
+default:
+printf("Error: Invalid choice\n");
+break;
+}
+} while(choice != 4);
+return 0;
+}
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<time.h>
+
+struct dirfile {
+    char fname[20];
+    int startblk, length;
+} direntry[20];
+
+int bv[64];
+int used = 0;
+int totalfile = 0;
+int n;
+
+void initialize() {
+    int i;
+    srand(time(NULL));
+    for(i = 0; i < n; i++) {
+        if(rand() % 2 == 0) {
+            bv[i] = 0;
+            used++;
+        } else {
+            bv[i] = 1;
         }
     }
 }
-```
-Q2:
-```
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Greeting</title>
-</head>
-<body>
-    <%
-        String userName = request.getParameter("userName");
-        String greeting = "";
-        int hour = java.time.LocalTime.now().getHour();
-        if (hour < 12) {
-            greeting = "Good morning";
-        } else if (hour < 18) {
-            greeting = "Good afternoon";
+
+void showbv() {
+    int i;
+    printf("block number \t status\n");
+    for(i = 0; i < n; i++) {
+        printf("%d\t\t", i);
+        if(bv[i] == 0) {
+            printf("allocated\n");
         } else {
-            greeting = "Good evening";
+            printf("free\n");
         }
-    %>
-    <h2><%= greeting %>, <%= userName %>!</h2>
-    <form action="Greeting.jsp" method="post">
-        Enter your name: <input type="text" name="userName">
-        <input type="submit" value="Submit">
-    </form>
-</body>
-</html>
-```
+    }
+}
+
+int search(int length) {
+    int i, j, flag = 1, blknum;
+    for(i = 0; i < n; i++) {
+        if(bv[i] == 1) {
+            flag = 1;
+            for(blknum = i, j = 0; j < length; j++) {
+                if(bv[blknum] == 1) {
+                    blknum++;
+                    continue;
+                } else {
+                    flag = 0;
+                    break;
+                }
+            }
+            if(flag == 1) return i;
+        }
+    }
+    return -1;
+}
+
+void createfile() {
+    char fname[10];
+    int length, blknum, k;
+    printf("\nEnter file name: ");
+    scanf("%s", fname);
+    printf("\nEnter the length of file: ");
+    scanf("%d", &length);
+    if(length <= n - used) {
+        blknum = search(length);
+    } else {
+        blknum = -1;
+    }
+    if(blknum == -1) {
+        printf("Error: No disk space available\n");
+    } else {
+        printf("\nBlock allocated\n");
+        used += length;
+        for(k = blknum; k < (blknum + length); k++) {
+            bv[k] = 0;
+        }
+        k = totalfile++;
+        strcpy(direntry[k].fname, fname);
+        direntry[k].startblk = blknum;
+        direntry[k].length = length;
+    }
+}
+
+void displaydir() {
+    int k;
+    printf("\tFilename\tStart\tSize\n");
+    for(k = 0; k < totalfile; k++) {
+        printf("%s\t%d\t%d\n", direntry[k].fname, direntry[k].startblk, direntry[k].length);
+    }
+    printf("\nUsed block = %d", used);
+    printf("\nFree block = %d", n - used);
+}
+
+int main() {
+    int choice;
+    printf("Enter the number of blocks in the disk: ");
+    scanf("%d", &n);
+    initialize();
+    do {
+        printf("\nMenu\n");
+        printf("1. Bit vector\n");
+        printf("2. Create new file\n");
+        printf("3. Show directory\n");
+        printf("4. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+        switch(choice) {
+            case 1:
+                showbv(n);
+                break;
+            case 2:
+                createfile();
+                break;
+            case 3:
+                displaydir();
+                break;
+            case 4:
+                printf("Exiting...\n");
+                break;
+            default:
+                printf("Error: Invalid choice\n");
+                break;
+        }
+    } while(choice != 4);
+    return 0;
+}
